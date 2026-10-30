@@ -79,7 +79,7 @@ final class DeveloperDiskImageService {
         let totalStages = Double(Self.downloadItems.count + 1)
         var completedStages = 0.0
 
-        progressHandler?(0.0, "Removing existing DDI files...")
+        progressHandler?(0.0, "Removing existing DDI files...".localized)
         UserDefaults.standard.removeObject(forKey: Self.mountMethodKey)
         try removeObsoleteFiles()
         if !Self.usesCryptexDDI {
@@ -97,19 +97,19 @@ final class DeveloperDiskImageService {
         }
 
         completedStages += 1.0
-        progressHandler?(completedStages / totalStages, "Starting downloads...")
+        progressHandler?(completedStages / totalStages, "Starting downloads...".localized)
 
         for item in Self.downloadItems {
-            progressHandler?(completedStages / totalStages, "Downloading \(item.name)...")
+            progressHandler?(completedStages / totalStages, "Downloading %@...".localized(item.name.localized))
             let destinationURL = Self.directoryURL.appendingPathComponent(item.fileName)
             try await downloadFile(from: item.urlString, to: destinationURL)
             completedStages += 1.0
-            progressHandler?(completedStages / totalStages, "\(item.name) ready")
+            progressHandler?(completedStages / totalStages, "%@ ready".localized(item.name.localized))
         }
 
         UserDefaults.standard.set(Self.mountMethod.rawValue, forKey: Self.mountMethodKey)
 
-        progressHandler?(1.0, "DDI download complete.")
+        progressHandler?(1.0, "DDI download complete.".localized)
     }
 
     private func removeObsoleteFiles() throws {
@@ -215,11 +215,11 @@ enum DDIDownloadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL(let string):
-            return "Invalid download URL: \(string)"
+            return "Invalid download URL: %@".localized(string)
         case .invalidResponse:
-            return "The DDI server returned an invalid response."
+            return "The DDI server returned an invalid response.".localized
         case .badStatus(let statusCode):
-            return "The DDI server returned HTTP \(statusCode)."
+            return "The DDI server returned HTTP %d.".localized(statusCode)
         }
     }
 }

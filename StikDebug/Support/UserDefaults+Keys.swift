@@ -17,6 +17,8 @@ extension UserDefaults {
         static let targetDeviceIP = "TunnelDeviceIP"
         /// Attaches processes with MallocGuardEdges and MallocScribble.
         static let mallocDebug = "enableMallocDebug"
+        /// Chosen app language (see `AppLanguage`).
+        static let appLanguage = "appLanguage"
         static let mallocGuardEdges = "enableMallocGuardEdges"
         static let mallocScribble = "enableMallocScribble"
     }

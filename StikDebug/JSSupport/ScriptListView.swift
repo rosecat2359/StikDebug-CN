@@ -127,7 +127,7 @@ struct ScriptListView: View {
                 Button("Delete", role: .destructive) { deleteScript(script) }
                 Button("Cancel", role: .cancel) { pendingDelete = nil }
             } message: { script in
-                Text("Delete \(script.lastPathComponent)? This cannot be undone.")
+                Text("Delete %@? This cannot be undone.".localized(script.lastPathComponent))
             }
             .fileImporter(
                 isPresented: $showImporter,
@@ -135,7 +135,7 @@ struct ScriptListView: View {
             ) { result in
                 switch result {
                 case .success(let fileURL): importScript(from: fileURL)
-                case .failure(let error): presentError(title: "Import Failed", message: error.localizedDescription)
+                case .failure(let error): presentError(title: "Import Failed".localized, message: error.localizedDescription)
                 }
             }
         }
@@ -212,13 +212,13 @@ struct ScriptListView: View {
                 .sorted { $0.lastPathComponent.localizedCaseInsensitiveCompare($1.lastPathComponent) == .orderedAscending }
         } catch {
             scripts = []
-            presentError(title: "Unable to Load Scripts", message: error.localizedDescription)
+            presentError(title: "Unable to Load Scripts".localized, message: error.localizedDescription)
         }
     }
 
     private func saveDefaultScript(_ url: URL) {
         defaultScriptName = url.lastPathComponent
-        presentSuccess(title: "Default Script Set", message: url.lastPathComponent)
+        presentSuccess(title: "Default Script Set".localized, message: url.lastPathComponent)
     }
 
     private func createNewScript() {
@@ -226,21 +226,21 @@ struct ScriptListView: View {
         var filename = newFileName.trimmingCharacters(in: .whitespacesAndNewlines)
         if !filename.hasSuffix(".js") { filename += ".js" }
         guard let filename = ScriptStore.normalizedScriptFileName(filename) else {
-            presentError(title: "Failed to Create New Script", message: "Use a simple .js filename without folders.")
+            presentError(title: "Failed to Create New Script".localized, message: "Use a simple .js filename without folders.".localized)
             return
         }
         do {
             let newURL = try ScriptStore.scriptURL(named: filename)
             guard !FileManager.default.fileExists(atPath: newURL.path) else {
-                presentError(title: "Failed to Create New Script", message: "A script with the same name already exists.")
+                presentError(title: "Failed to Create New Script".localized, message: "A script with the same name already exists.".localized)
                 return
             }
             try "".write(to: newURL, atomically: true, encoding: .utf8)
             newFileName = ""
             loadScripts()
-            presentSuccess(title: "Created", message: filename)
+            presentSuccess(title: "Created".localized, message: filename)
         } catch {
-            presentError(title: "Error Creating File", message: error.localizedDescription)
+            presentError(title: "Error Creating File".localized, message: error.localizedDescription)
         }
     }
 
@@ -252,7 +252,7 @@ struct ScriptListView: View {
             }
             loadScripts()
         } catch {
-            presentError(title: "Delete Failed", message: error.localizedDescription)
+            presentError(title: "Delete Failed".localized, message: error.localizedDescription)
         }
     }
 
@@ -278,11 +278,11 @@ struct ScriptListView: View {
                 try FileManager.default.copyItem(at: fileURL, to: dest)
                 DispatchQueue.main.async {
                     self.loadScripts()
-                    self.presentSuccess(title: "Imported", message: fileName)
+                    self.presentSuccess(title: "Imported".localized, message: fileName)
                 }
             } catch {
                 DispatchQueue.main.async {
-                    self.presentError(title: "Import Failed", message: error.localizedDescription)
+                    self.presentError(title: "Import Failed".localized, message: error.localizedDescription)
                 }
             }
         }

@@ -11,6 +11,7 @@ import SwiftUI
 struct StikDebugApp: App {
     @Environment(\.scenePhase) private var scenePhase
     @State private var shouldAttemptTunnelReconnect = false
+    @ObservedObject private var languageManager = LanguageManager.shared
 
     init() {
         AppBootstrapper.configure()
@@ -19,6 +20,8 @@ struct StikDebugApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .environment(\.locale, languageManager.locale)
+                .id(languageManager.refreshToken)
                 .task {
                     await downloadMissingDeveloperDiskImageFiles()
                 }
@@ -49,8 +52,8 @@ struct StikDebugApp: App {
         } catch {
             await MainActor.run {
                 showAlert(
-                    title: "An Error has Occurred",
-                    message: "[Download DDI Error]: \(error.localizedDescription)",
+                    title: "An Error has Occurred".localized,
+                    message: "[Download DDI Error]: %@".localized(error.localizedDescription),
                     showOk: true
                 )
             }

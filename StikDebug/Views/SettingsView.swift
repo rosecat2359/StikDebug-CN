@@ -14,6 +14,7 @@ private enum SettingsLinks {
 }
 
 struct SettingsView: View {
+    @ObservedObject private var languageManager = LanguageManager.shared
     @AppStorage(UserDefaults.Keys.txmOverride) private var overrideTXMDetection = false
     @AppStorage(UserDefaults.Keys.confirmExternalJITRequests) private var confirmExternalJITRequests = true
     @AppStorage("keepAliveAudio") private var keepAliveAudio = true
@@ -30,11 +31,12 @@ struct SettingsView: View {
     @FocusState private var focusedConnectionField: ConnectionField?
     @State private var targetDeviceIPInput = ""
     @State private var remotePairingPortInput = ""
-    @State private var automaticPortPlaceholder = "Discovering…"
+    @State private var automaticPortPlaceholder = "Discovering…".localized
     @State private var isShowingPairingFilePicker = false
     @State private var isImportingFile = false
     @State private var pairingImportMessage: (text: String, isError: Bool)?
     @State private var showDDIConfirmation = false
+    @State private var showRestartConfirmation = false
     @State private var isRedownloadingDDI = false
     @State private var ddiDownloadProgress: Double = 0.0
     @State private var ddiStatusMessage: String = ""
@@ -43,6 +45,13 @@ struct SettingsView: View {
     private var appVersion: String {
         let marketingVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
         return marketingVersion
+    }
+
+    private var languageSelection: Binding<AppLanguage> {
+        Binding(
+            get: { languageManager.language },
+            set: { languageManager.select($0) }
+        )
     }
 
     var body: some View {
@@ -68,6 +77,18 @@ struct SettingsView: View {
                     Link(destination: SettingsLinks.githubStars) {
                         Label("Star on GitHub", systemImage: "star")
                     }
+                }
+
+                Section {
+                    Picker(selection: languageSelection) {
+                        ForEach(AppLanguage.allCases) { language in
+                            Text(language.displayName).tag(language)
+                        }
+                    } label: {
+                        Label("Language", systemImage: "globe")
+                    }
+                } footer: {
+                    Text("The interface updates as soon as you pick a language. Tap Restart App if a system dialog is still in the old language.")
                 }
 
                 Section("Pairing File") {
@@ -177,6 +198,9 @@ struct SettingsView: View {
                     Button { openAppFolder() } label: {
                         Label("App Folder", systemImage: "folder")
                     }.foregroundStyle(.primary)
+                    Button { showRestartConfirmation = true } label: {
+                        Label("Restart App", systemImage: "arrow.clockwise")
+                    }.foregroundStyle(.primary)
                     Button { showDDIConfirmation = true } label: {
                         Label("Redownload DDI", systemImage: "arrow.down.circle")
                     }.foregroundStyle(.primary).disabled(isRedownloadingDDI)
@@ -218,14 +242,14 @@ struct SettingsView: View {
             remotePairingPortInput = remotePairingPortOverride
         }
         .task(id: targetDeviceIP) {
-            automaticPortPlaceholder = "Discovering…"
+            automaticPortPlaceholder = "Discovering…".localized
             let result = await Task.detached {
                 RemotePairingPortResolver.discover()
             }.value
             guard !Task.isCancelled else { return }
             automaticPortPlaceholder = result.source == "Bonjour"
-                ? "Bonjour (\(result.port))"
-                : "Fallback (\(result.port))"
+                ? "Bonjour (%d)".localized(Int(result.port))
+                : "Fallback (%d)".localized(Int(result.port))
         }
         .onChange(of: focusedConnectionField) { _, field in
             if field == nil {
@@ -251,17 +275,17 @@ struct SettingsView: View {
                 do {
                     try PairingFileStore.importFromPicker(url, fileManager: fileManager)
                     isImportingFile = false
-                    pairingImportMessage = ("Imported successfully", false)
+                    pairingImportMessage = ("Imported successfully".localized, false)
                     startTunnelInBackground()
                     schedulePairingStatusDismiss()
                 } catch {
                     isImportingFile = false
-                    pairingImportMessage = ("Import failed: \(error.localizedDescription)", true)
+                    pairingImportMessage = ("Import failed: %@".localized(error.localizedDescription), true)
                     schedulePairingStatusDismiss()
                 }
             case .failure(let error):
                 isImportingFile = false
-                pairingImportMessage = ("Import failed: \(error.localizedDescription)", true)
+                pairingImportMessage = ("Import failed: %@".localized(error.localizedDescription), true)
                 schedulePairingStatusDismiss()
             }
         }
@@ -272,6 +296,12 @@ struct SettingsView: View {
             Button("Cancel", role: .cancel) { }
         } message: {
             Text("Existing DDI files will be removed before downloading fresh copies.")
+        }
+        .confirmationDialog("Restart StikDebug?", isPresented: $showRestartConfirmation, titleVisibility: .visible) {
+            Button("Restart", role: .destructive) { exit(0) }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("The app will close. Open it again to apply the new language everywhere.")
         }
     }
 
@@ -288,11 +318,13 @@ struct SettingsView: View {
         let processInfo = ProcessInfo.processInfo
         let txmLabel: String
         if processInfo.isTXMOverridden {
-            txmLabel = "TXM (Override)"
+            txmLabel = "TXM (Override)".localized
+        } else if processInfo.hasTXM {
+            txmLabel = "TXM"
         } else {
-            txmLabel = processInfo.hasTXM ? "TXM" : "Non TXM"
+            txmLabel = "Non TXM".localized
         }
-        return "Version \(appVersion) • iOS \(UIDevice.current.systemVersion) • \(txmLabel)"
+        return "Version %@ • iOS %@ • %@".localized(appVersion, UIDevice.current.systemVersion, txmLabel)
     }
 
     private func handleAudioKeepAliveChange(_ enabled: Bool) {
@@ -344,7 +376,7 @@ struct SettingsView: View {
             await MainActor.run {
                 isRedownloadingDDI = true
                 ddiDownloadProgress = 0
-                ddiStatusMessage = "Preparing download…"
+                ddiStatusMessage = "Preparing download…".localized
                 ddiResultMessage = nil
             }
             do {
@@ -356,12 +388,12 @@ struct SettingsView: View {
                 }
                 await MainActor.run {
                     isRedownloadingDDI = false
-                    ddiResultMessage = ("DDI files refreshed successfully.", false)
+                    ddiResultMessage = ("DDI files refreshed successfully.".localized, false)
                 }
             } catch {
                 await MainActor.run {
                     isRedownloadingDDI = false
-                    ddiResultMessage = ("Failed to redownload DDI files: \(error.localizedDescription)", true)
+                    ddiResultMessage = ("Failed to redownload DDI files: %@".localized(error.localizedDescription), true)
                 }
             }
         }

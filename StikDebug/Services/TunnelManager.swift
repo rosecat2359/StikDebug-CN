@@ -103,7 +103,7 @@ final class TunnelManager: ObservableObject {
         }
 
         showAlert(
-            title: "Connection Error",
+            title: "Connection Error".localized,
             message: tunnelConnectionAlertMessage(for: error),
             showOk: false,
             showTryAgain: true
@@ -118,11 +118,11 @@ final class TunnelManager: ObservableObject {
         LogManager.shared.addInfoLog("Pairing file reported invalid; keeping existing file")
 
         showAlert(
-            title: "Invalid Pairing File",
-            message: "The pairing file may be invalid or expired. You can import a new pairing file to replace it.",
+            title: "Invalid Pairing File".localized,
+            message: "The pairing file may be invalid or expired. You can import a new pairing file to replace it.".localized,
             showOk: true,
             showTryAgain: false,
-            primaryButtonText: "Select New File"
+            primaryButtonText: "Select New File".localized
         ) { _ in
             NotificationCenter.default.post(name: NSNotification.Name("ShowPairingFilePicker"), object: nil)
         }
@@ -152,13 +152,17 @@ private func tunnelConnectionLogMessage(for error: NSError) -> String {
 
 private func tunnelConnectionAlertMessage(for error: NSError) -> String {
     """
-    Code \(error.code): \(error.localizedDescription)
+    Code %d: %@
 
     Troubleshooting:
     1. Make sure Wi-Fi is connected or Cellular Data is disabled, and LocalDevVPN is enabled.
     2. Restart your iPhone or iPad, then re-enable LocalDevVPN and try again.
     3. Generate and place a fresh pairing file using iloader.
 
-    Target attempted: \(RemotePairingPortResolver.lastAttemptDescription)
-    """
+    Target attempted: %@
+    """.localized(
+        error.code,
+        error.localizedDescription,
+        RemotePairingPortResolver.lastAttemptDescription
+    )
 }

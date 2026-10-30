@@ -32,34 +32,34 @@ enum HomeExternalAction: Identifiable {
     var title: String {
         switch self {
         case .enableJIT:
-            return "Enable JIT?"
+            return "Enable JIT?".localized
         case .killProcess:
-            return "Kill Process?"
+            return "Kill Process?".localized
         case .launchApp:
-            return "Launch App?"
+            return "Launch App?".localized
         }
     }
 
     var message: String {
         switch self {
         case .enableJIT(let configuration):
-            let scriptText = configuration.scriptData == nil ? "" : " and run a script"
-            return "An external link wants to enable JIT\(scriptText) for \(targetDescription(for: configuration))."
+            let scriptText = configuration.scriptData == nil ? "" : " and run a script".localized
+            return "An external link wants to enable JIT%@ for %@.".localized(scriptText, targetDescription(for: configuration))
         case .killProcess(let pid):
-            return "An external link wants to kill process \(pid)."
+            return "An external link wants to kill process %d.".localized(pid)
         case .launchApp(let bundleID):
-            return "An external link wants to launch \(bundleID)."
+            return "An external link wants to launch %@.".localized(bundleID)
         }
     }
 
     var confirmationTitle: String {
         switch self {
         case .enableJIT(let configuration):
-            return configuration.scriptData == nil ? "Enable JIT" : "Enable and Run Script"
+            return configuration.scriptData == nil ? "Enable JIT".localized : "Enable and Run Script".localized
         case .killProcess:
-            return "Kill Process"
+            return "Kill Process".localized
         case .launchApp:
-            return "Launch App"
+            return "Launch App".localized
         }
     }
 
@@ -79,8 +79,8 @@ enum HomeExternalAction: Identifiable {
             return bundleID
         }
         if let pid = configuration.pid {
-            return "process \(pid)"
+            return "process %d".localized(pid)
         }
-        return "the requested app"
+        return "the requested app".localized
     }
 }

@@ -34,7 +34,7 @@ final class DeviceInfoManager: ObservableObject {
                 try JITEnableContext.shared.ensureTunnel()
             } catch {
                 await MainActor.run {
-                    self.error = ("Initialization Failed", error.localizedDescription)
+                    self.error = ("Initialization Failed".localized, error.localizedDescription)
                     self.busy = false
                 }
                 return
@@ -49,7 +49,7 @@ final class DeviceInfoManager: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
-                    self.error = ("Initialization Failed", error.localizedDescription)
+                    self.error = ("Initialization Failed".localized, error.localizedDescription)
                     self.busy = false
                 }
             }
@@ -66,7 +66,7 @@ final class DeviceInfoManager: ObservableObject {
                 cXml = try JITEnableContext.shared.ideviceInfoGetXML(withLockdownClient: lockdownHandle?.raw)
             } catch {
                 await MainActor.run {
-                    self.error = ("Fetch Error", "Failed to fetch device info \(error)")
+                    self.error = ("Fetch Error".localized, "Failed to fetch device info %@".localized(String(describing: error)))
                     self.busy = false
                 }
                 return
@@ -76,7 +76,7 @@ final class DeviceInfoManager: ObservableObject {
             defer { plist_mem_free(cXml) }
             guard let xml = String(validatingUTF8: cXml) else {
                 await MainActor.run {
-                    self.error = ("Parse Error", "Invalid XML data")
+                    self.error = ("Parse Error".localized, "Invalid XML data".localized)
                     self.busy = false
                 }
                 return
@@ -85,7 +85,7 @@ final class DeviceInfoManager: ObservableObject {
                 let data = Data(xml.utf8)
                 guard let dict = try PropertyListSerialization.propertyList(from: data, options: [], format: nil) as? [String: Any] else {
                     throw NSError(domain: "DeviceInfo", code: 0,
-                                  userInfo: [NSLocalizedDescriptionKey: "Expected dictionary"])
+                                  userInfo: [NSLocalizedDescriptionKey: "Expected dictionary".localized])
                 }
                 let formatted = dict.keys.sorted().map { ($0, Self.convertToString(dict[$0]!)) }
                 await MainActor.run {
@@ -94,7 +94,7 @@ final class DeviceInfoManager: ObservableObject {
                 }
             } catch {
                 await MainActor.run {
-                    self.error = ("Parse Error", error.localizedDescription)
+                    self.error = ("Parse Error".localized, error.localizedDescription)
                     self.busy = false
                 }
             }
@@ -244,7 +244,7 @@ struct DeviceInfoView: View {
                                 exportURL = try mgr.exportToCSV()
                                 isShowingExporter = true
                             } catch {
-                                fail("Export Failed", error.localizedDescription)
+                                fail("Export Failed".localized, error.localizedDescription)
                             }
                         } label: {
                             Label("Export", systemImage: "square.and.arrow.up")
@@ -283,7 +283,7 @@ struct DeviceInfoView: View {
                 document: CSVDocument(url: exportURL),
                 contentType: .commaSeparatedText,
                 defaultFilename: "DeviceInfo"
-            ) { _ in notify("Export Complete", "Device info exported to CSV") }
+            ) { _ in notify("Export Complete".localized, "Device info exported to CSV".localized) }
             .sheet(isPresented: $showShareSheet) {
                 ActivityViewController(items: shareItems)
             }
@@ -355,10 +355,10 @@ struct DeviceInfoView: View {
     private func importPairing(from src: URL) {
         do {
             try PairingFileStore.importFromPicker(src)
-            notify("Pairing File Added", "Your device is ready. Tap Reload to fetch info.")
+            notify("Pairing File Added".localized, "Your device is ready. Tap Reload to fetch info.".localized)
             mgr.initAndLoad()
         } catch {
-            fail("Import Failed", error.localizedDescription)
+            fail("Import Failed".localized, error.localizedDescription)
         }
     }
 

@@ -51,7 +51,7 @@ private enum IdeviceBridge {
         do {
             let data = try Data(contentsOf: url, options: .mappedIfSafe)
             guard !data.isEmpty else {
-                throw makeError(message: "\(description) is empty")
+                throw makeError(message: "%@ is empty".localized(description))
             }
             return data
         } catch let error as NSError {
@@ -61,14 +61,14 @@ private enum IdeviceBridge {
 
     static func uint64Value(from plist: plist_t?, fieldName: String) throws -> UInt64 {
         guard let plist else {
-            throw makeError(message: "\(fieldName) was not returned by lockdownd")
+            throw makeError(message: "%@ was not returned by lockdownd".localized(fieldName))
         }
 
         var value: UInt64 = 0
         plist_get_uint_val(plist, &value)
 
         guard value != 0 else {
-            throw makeError(message: "Failed to decode \(fieldName)")
+            throw makeError(message: "Failed to decode %@".localized(fieldName))
         }
 
         return value
@@ -255,7 +255,7 @@ private enum IdeviceBridge {
 
         guard let adapterHandle = context.adapterHandle,
               let handshakeHandle = context.handshakeHandle else {
-            throw makeError(message: "Tunnel is not connected")
+            throw makeError(message: "Tunnel is not connected".localized)
         }
 
         return (adapterHandle, handshakeHandle)
@@ -319,7 +319,7 @@ extension JITEnableContext {
         }
 
         guard let assets else {
-            throw IdeviceBridge.makeError(message: "DDI cryptex assets were not loaded")
+            throw IdeviceBridge.makeError(message: "DDI cryptex assets were not loaded".localized)
         }
         defer { cryptex1_assets_free(assets) }
 
@@ -595,14 +595,14 @@ extension JITEnableContext {
                 }
 
                 guard let rawIconData, rawIconLength > 0 else {
-                    throw IdeviceBridge.makeError(message: "App icon data was empty")
+                    throw IdeviceBridge.makeError(message: "App icon data was empty".localized)
                 }
 
                 defer { free(rawIconData) }
 
                 let data = Data(bytes: rawIconData, count: rawIconLength)
                 guard let image = UIImage(data: data) else {
-                    throw IdeviceBridge.makeError(message: "Failed to decode app icon image")
+                    throw IdeviceBridge.makeError(message: "Failed to decode app icon image".localized)
                 }
 
                 return image
@@ -640,7 +640,7 @@ extension JITEnableContext {
         guard plist_to_xml(plistObject, &xml, &xmlLength) == PLIST_ERR_SUCCESS,
               let xml,
               xmlLength > 0 else {
-            throw IdeviceBridge.makeError(message: "Failed to serialize device info plist")
+            throw IdeviceBridge.makeError(message: "Failed to serialize device info plist".localized)
         }
 
         return xml
@@ -719,7 +719,7 @@ final class CMSDecoderHelper: NSObject {
             throw IdeviceBridge.makeError(
                 domain: NSCocoaErrorDomain,
                 code: NSURLErrorBadURL,
-                message: "Invalid or empty CMS payload"
+                message: "Invalid or empty CMS payload".localized
             )
         }
 
@@ -739,7 +739,7 @@ final class CMSDecoderHelper: NSObject {
         throw IdeviceBridge.makeError(
             domain: NSCocoaErrorDomain,
             code: NSFileReadUnknownError,
-            message: "Unable to extract plist from CMS payload"
+            message: "Unable to extract plist from CMS payload".localized
         )
     }
 }

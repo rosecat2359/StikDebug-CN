@@ -56,7 +56,7 @@ struct HomeView: View {
             handleExternalURL(url)
         }
         .confirmationDialog(
-            pendingExternalURLAction?.title ?? "External Request",
+            pendingExternalURLAction?.title ?? "External Request".localized,
             isPresented: Binding(
                 get: { pendingExternalURLAction != nil },
                 set: { isPresented in

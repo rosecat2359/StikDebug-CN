@@ -25,6 +25,27 @@
 - **Device Info:** View detailed device metadata.
 - **Processes:** Inspect running apps/processes and terminate them.
 - **Location Simulator:** Simulate the GPS location of your device.
+- **Languages:** English and Simplified Chinese (简体中文), switchable inside the app.
+
+## 中文支持 / Chinese Support
+
+This fork adds a complete Simplified Chinese interface on top of the original English one.
+You can switch languages at any time without reinstalling:
+
+1. 打开 **设置 (Settings)** 标签页
+2. 找到 **Language / 语言**，选择 `简体中文` 或 `English`
+3. 界面会立即刷新；如果某些系统弹窗仍显示旧语言，点按 **重启应用 (Restart App)** 即可
+
+> 默认选项为 `跟随系统 (Follow System)`：系统语言是中文时自动使用简体中文，否则使用英文。
+
+Implementation notes:
+
+- All UI text lives in `StikDebug/Localizable.xcstrings` (String Catalog) keyed by the English source string,
+  so a missing translation always falls back to English.
+- `StikDebug/Core/Localization.swift` provides `AppLanguage`, `LanguageManager`, and the `String.localized`
+  helpers used for strings that are built in code instead of being passed to SwiftUI as a `LocalizedStringKey`.
+- Choosing a language writes `AppleLanguages` for the app and injects the matching `Locale` into the
+  SwiftUI environment, which is what makes the switch instant.
 
 ## Download
 > [!NOTE]

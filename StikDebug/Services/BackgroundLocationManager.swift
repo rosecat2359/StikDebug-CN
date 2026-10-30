@@ -105,11 +105,11 @@ final class BackgroundLocationManager: NSObject, CLLocationManagerDelegate {
         BackgroundAudioManager.shared.configurationDidChange()
 
         showAlert(
-            title: "Location Access Refused",
-            message: "Location access was refused. Open Settings to enable it.",
+            title: "Location Access Refused".localized,
+            message: "Location access was refused. Open Settings to enable it.".localized,
             showOk: false,
             showTryAgain: true,
-            primaryButtonText: "Settings"
+            primaryButtonText: "Settings".localized
         ) { openSettings in
             guard openSettings,
                   let settingsURL = URL(string: UIApplication.openSettingsURLString) else {

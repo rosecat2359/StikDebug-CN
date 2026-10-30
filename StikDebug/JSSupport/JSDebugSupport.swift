@@ -23,12 +23,12 @@ private func describeIdeviceError(_ ffiError: UnsafeMutablePointer<IdeviceFfiErr
 
 func handleJSContextSendDebugCommand(_ context: JSContext?, _ commandStr: String, _ debugProxy: OpaquePointer?) -> String? {
     guard let debugProxy else {
-        jsException("debug proxy is unavailable", in: context)
+        jsException("debug proxy is unavailable".localized, in: context)
         return nil
     }
 
     guard let command = debugserver_command_new(commandStr, nil, 0) else {
-        jsException("failed to allocate debugserver command", in: context)
+        jsException("failed to allocate debugserver command".localized, in: context)
         return nil
     }
 
@@ -126,7 +126,7 @@ private func makeBulkWriteCommands(startAddress: UInt64, regionSize: UInt64) -> 
 
 func handleJITPageWrite(_ context: JSContext?, _ startAddr: UInt64, _ jitPagesSize: UInt64, _ debugProxy: OpaquePointer?) -> String? {
     guard let debugProxy else {
-        jsException("debug proxy is unavailable", in: context)
+        jsException("debug proxy is unavailable".localized, in: context)
         return nil
     }
 

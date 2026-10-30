@@ -15,8 +15,8 @@ class Profile: ObservableObject {
         return f
     }()
     let data: Data
-    @Published var appName: String = "unknown"
-    @Published var appId: String = "unknown"
+    @Published var appName: String = "unknown".localized
+    @Published var appId: String = "unknown".localized
     @Published var uuid: String
     @Published var expirationDate: Date? = nil
     @Published var plistDict: [String:Any]? = nil
@@ -29,9 +29,9 @@ class Profile: ObservableObject {
             let plistDict = try PropertyListSerialization.propertyList(from: plistData, format: nil)
             if let plistDict = plistDict as? [String:Any] {
                 self.plistDict = plistDict
-                self.appName = plistDict["AppIDName"] as? String ?? "unknown"
+                self.appName = plistDict["AppIDName"] as? String ?? "unknown".localized
                 if let entitlementsDict = plistDict["Entitlements"] as? [String:Any] {
-                    self.appId = entitlementsDict["application-identifier"] as? String ?? "unknown"
+                    self.appId = entitlementsDict["application-identifier"] as? String ?? "unknown".localized
                 }
                 self.expirationDate = plistDict["ExpirationDate"] as? Date
                 self.uuid = plistDict["UUID"] as? String ?? UUID().uuidString
@@ -49,7 +49,7 @@ class Profile: ObservableObject {
             if let expirationDate {
                 return Profile.dateFormatter.string(from: expirationDate)
             } else {
-                return "Unknown"
+                return "Unknown".localized
             }
         }
     }
@@ -158,7 +158,7 @@ struct ProfileView: View {
                             if let match = entry.bestMatchingProfile {
                                 HStack {
                                     Image(systemName: "clock")
-                                    Text("Expires: \(match.profile.formattedDate)")
+                                    Text("Expires: %@".localized(match.profile.formattedDate))
                                 }
                                 .foregroundStyle(match.profile.dateColor)
                                 .font(.subheadline)
@@ -203,7 +203,7 @@ struct ProfileView: View {
                                         else { expandedApps.insert(entry.id) }
                                     }
                                 } label: {
-                                    Label(showMore ? "Hide older profiles" : "Show \(extraProfiles.count) older profiles",
+                                    Label(showMore ? "Hide older profiles".localized : "Show %d older profiles".localized(extraProfiles.count),
                                           systemImage: showMore ? "chevron.up" : "chevron.down")
                                         .font(.caption)
                                         .foregroundStyle(.blue)
@@ -282,7 +282,7 @@ struct ProfileView: View {
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Remove profile for \(removeTargetName) (UUID: \(removeTargetUUID))?\nApps associated with this profile may become unavailable.")
+            Text("Remove profile for %@ (UUID: %@)?\nApps associated with this profile may become unavailable.".localized(removeTargetName, removeTargetUUID))
         }
     }
     
@@ -309,7 +309,7 @@ struct ProfileView: View {
     private func profileRow(match: ProfileMatch, isMostRecent: Bool) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(isMostRecent ? "Most Recent Profile" : "Profile")
+                Text(isMostRecent ? "Most Recent Profile".localized : "Profile".localized)
                     .font(.subheadline.bold())
                     .foregroundStyle(.primary)
                 Spacer()
@@ -322,7 +322,7 @@ struct ProfileView: View {
                     Text(match.profile.appName)
                         .font(.caption)
                         .foregroundStyle(.secondary)
-                    Text("UUID: \(match.profile.uuid)")
+                    Text("UUID: %@".localized(match.profile.uuid))
                         .font(.caption.monospaced())
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
@@ -377,10 +377,10 @@ struct ProfileView: View {
             let validProfiles = profiles.filter { $0.decodeError == nil }
 
             if !failedProfiles.isEmpty {
-                let errors = failedProfiles.map { $0.decodeError ?? "Unknown error" }
+                let errors = failedProfiles.map { $0.decodeError ?? "Unknown error".localized }
                 let uniqueErrors = Array(Set(errors))
                 await MainActor.run {
-                    alertTitle = "Failed to Decode \(failedProfiles.count) Profile\(failedProfiles.count == 1 ? "" : "s")"
+                    alertTitle = (failedProfiles.count == 1 ? "Failed to Decode %d Profile" : "Failed to Decode %d Profiles").localized(failedProfiles.count)
                     alertMsg = uniqueErrors.joined(separator: "\n")
                     alert = true
                 }
@@ -415,7 +415,7 @@ struct ProfileView: View {
             }
         } catch {
             await MainActor.run {
-                alertTitle = "Failed to load"
+                alertTitle = "Failed to load".localized
                 alertMsg = error.localizedDescription
                 alertSuccess = false
                 alert = true
@@ -545,15 +545,15 @@ struct ProfileView: View {
         working = true
         do {
             try JITEnableContext.shared.removeProfile(withUUID: uuid)
-            alertMsg = "Profile removed successfully"
-            alertTitle = "Success"
+            alertMsg = "Profile removed successfully".localized
+            alertTitle = "Success".localized
             alertSuccess = true
             alert = true
             // Reload profiles after removal
             await loadData(force: true)
         } catch {
             alertMsg = error.localizedDescription
-            alertTitle = "Failed to Remove Profile"
+            alertTitle = "Failed to Remove Profile".localized
             alertSuccess = false
             alert = true
         }
@@ -565,7 +565,7 @@ struct ProfileView: View {
         do {
             let fileURL = try result.get().first
             guard let fileURL = fileURL else {
-                throw NSError(domain: "ProfileView", code: -1, userInfo: [NSLocalizedDescriptionKey: "No file selected"])
+                throw NSError(domain: "ProfileView", code: -1, userInfo: [NSLocalizedDescriptionKey: "No file selected".localized])
             }
             
             // Start accessing security-scoped resource
@@ -579,8 +579,8 @@ struct ProfileView: View {
             let profileData = try Data(contentsOf: fileURL)
             try JITEnableContext.shared.addProfile(profileData)
             
-            alertMsg = "Profile added successfully"
-            alertTitle = "Success"
+            alertMsg = "Profile added successfully".localized
+            alertTitle = "Success".localized
             alertSuccess = true
             alert = true
             
@@ -588,7 +588,7 @@ struct ProfileView: View {
             await loadData(force: true)
         } catch {
             alertMsg = error.localizedDescription
-            alertTitle = "Failed to Add Profile"
+            alertTitle = "Failed to Add Profile".localized
             alertSuccess = false
             alert = true
         }
