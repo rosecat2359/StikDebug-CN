@@ -126,5 +126,8 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: ${{ steps.ipa.outputs.name }}
+          # Bilingual notes (zh-Hans + English); GitHub appends the generated
+          # commit list right after this body.
+          body_path: .github/release-notes.md
           generate_release_notes: true
           fail_on_unmatched_files: true
