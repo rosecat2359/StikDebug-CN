@@ -89,11 +89,16 @@ jobs:
           ls -lh StikDebug-unsigned.ipa
           unzip -l StikDebug-unsigned.ipa | head -n 10
 
-          if [ -d "$APP_PATH/zh-Hans.lproj" ]; then
-            echo "Localization check: zh-Hans.lproj present"
-            ls "$APP_PATH/zh-Hans.lproj"
+          if [ ! -d "$APP_PATH/zh-Hans.lproj" ]; then
+            echo "::error::zh-Hans.lproj is missing from the app bundle - the Chinese string catalog did not compile"
+            exit 1
+          fi
+          ls -la "$APP_PATH/zh-Hans.lproj"
+          if plutil -convert xml1 -o /tmp/zh-Hans.plist "$APP_PATH/zh-Hans.lproj/Localizable.strings" 2>/dev/null \
+             && grep -q "设置" /tmp/zh-Hans.plist; then
+            echo "Localization check: zh-Hans strings compiled and contain Chinese text"
           else
-            echo "::warning::zh-Hans.lproj missing - the Chinese string catalog did not compile"
+            echo "::warning::zh-Hans.lproj exists but the Chinese strings could not be verified"
           fi
 
       - name: Name the IPA
