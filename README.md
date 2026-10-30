@@ -142,6 +142,18 @@ StikDebug enables **JIT** for sideloaded apps on iOS 17.4+ without needing a com
 
 After install, follow the JIT setup steps above (pairing import, etc.).
 
+### Build an installable IPA with GitHub Actions
+
+This fork ships a ready-to-use workflow (`.github/workflows/build-ipa.yml`) that builds an **unsigned** IPA — no certificates or secrets required:
+
+1. Open the **Actions** tab of the fork and click **“I understand my workflows, go ahead and enable them”** (GitHub disables Actions on forks by default).
+2. Push to `main`, or open **Build IPA → Run workflow** and pick `Release` or `Debug`.
+3. Download `StikDebug-<version>-<sha>.ipa` from the run's **Artifacts** section.
+4. Install it with AltStore / SideStore / Sideloadly — they re-sign it with your own certificate.
+
+Pushing a tag (for example `v3.1.15`) also publishes a GitHub Release with the IPA attached.
+The upstream release pipeline in `build_ipa.yml` is kept for the official repository and is skipped on forks unless started manually.
+
 ## Contributing
 
 Thank you for your interest in contributing to this project. Contributions of all kinds are welcome.

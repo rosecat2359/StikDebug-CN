@@ -1,0 +1,125 @@
+name: Build IPA
+
+# Fork-friendly unsigned IPA build.
+#
+# - Every push to main (and every manual run) produces a downloadable
+#   unsigned .ipa artifact. Sideloading tools such as AltStore, SideStore or
+#   Sideloadly re-sign it on install.
+# - Pushing a tag (e.g. v3.1.15) also publishes a GitHub Release with the IPA.
+#
+# The project is built with code signing disabled, so no certificates or
+# secrets are required.
+
+on:
+  push:
+    branches: [ "main" ]
+    tags: [ "v*", "[0-9]*" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: "Build configuration"
+        type: choice
+        options:
+          - Release
+          - Debug
+        default: Release
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-ipa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build unsigned IPA
+    runs-on: macos-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Show toolchain
+        run: |
+          xcodebuild -version
+          xcode-select -p
+          sw_vers
+
+      - name: Resolve Swift packages
+        run: |
+          xcodebuild -project StikDebug.xcodeproj \
+            -scheme StikDebug \
+            -resolvePackageDependencies
+
+      - name: Build unsigned archive
+        env:
+          CONFIGURATION: ${{ inputs.configuration || 'Release' }}
+        run: |
+          set -o pipefail
+          mkdir -p build
+          xcodebuild clean archive \
+            -project StikDebug.xcodeproj \
+            -scheme StikDebug \
+            -configuration "$CONFIGURATION" \
+            -archivePath build/StikDebug.xcarchive \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build/xcodebuild.log | tail -n 200
+
+      - name: Package IPA
+        run: |
+          set -euo pipefail
+          APP_PATH="$(find build/StikDebug.xcarchive/Products/Applications -maxdepth 1 -name '*.app' -print -quit)"
+          test -n "$APP_PATH"
+          echo "App bundle: $APP_PATH"
+
+          mkdir -p Payload
+          cp -R "$APP_PATH" Payload/
+          zip -qry StikDebug-unsigned.ipa Payload
+          rm -rf Payload
+
+          ls -lh StikDebug-unsigned.ipa
+          unzip -l StikDebug-unsigned.ipa | head -n 10
+
+          if [ -d "$APP_PATH/zh-Hans.lproj" ]; then
+            echo "Localization check: zh-Hans.lproj present"
+            ls "$APP_PATH/zh-Hans.lproj"
+          else
+            echo "::warning::zh-Hans.lproj missing - the Chinese string catalog did not compile"
+          fi
+
+      - name: Name the IPA
+        id: ipa
+        run: |
+          set -euo pipefail
+          VERSION="$(grep -oE 'MARKETING_VERSION = [0-9.]+;' StikDebug.xcodeproj/project.pbxproj \
+            | sed -E 's/.*= ([0-9.]+);/\1/' | sort -V | tail -n 1)"
+          SHORT_SHA="${GITHUB_SHA::7}"
+          NAME="StikDebug-${VERSION}-${SHORT_SHA}.ipa"
+          mv StikDebug-unsigned.ipa "$NAME"
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ steps.ipa.outputs.name }}
+          path: ${{ steps.ipa.outputs.name }}
+          archive: false
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v3
+        with:
+          files: ${{ steps.ipa.outputs.name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
